@@ -1,0 +1,72 @@
+type Bought @entity(immutable: true) {
+  id: Bytes!
+  buyer: Bytes! # address
+  token: Bytes! # address
+  ethIn: BigInt! # uint256
+  tokensOut: BigInt! # uint256
+  newPrice: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type OwnershipTransferred @entity(immutable: true) {
+  id: Bytes!
+  previousOwner: Bytes! # address
+  newOwner: Bytes! # address
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Sold @entity(immutable: true) {
+  id: Bytes!
+  seller: Bytes! # address
+  token: Bytes! # address
+  ethOut: BigInt! # uint256
+  tokensIn: BigInt! # uint256
+  newPrice: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Swap @entity(immutable: true) {
+  id: Bytes!
+  sender: Bytes! # address
+  amount0In: BigInt! # uint256
+  amount1In: BigInt! # uint256
+  amount0Out: BigInt! # uint256
+  amount1Out: BigInt! # uint256
+  to: Bytes! # address
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type TokenCreated @entity(immutable: true) {
+  id: Bytes!
+  creator: Bytes! # address
+  token: Bytes! # address
+  supply: BigInt! # uint256
+  name: String! # string
+  symbol: String! # string
+  imageCid: String! # string
+  description: String! # string
+  links: [String!]! # string[]
+  price: BigInt! # uint256
+  lpStrategy: Int! # uint8
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type TokenLaunched @entity(immutable: true) {
+  id: Bytes!
+  creator: Bytes! # address
+  token: Bytes! # address
+  pair: Bytes! # address
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}

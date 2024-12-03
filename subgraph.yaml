@@ -1,0 +1,41 @@
+specVersion: 1.0.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: Launchpad
+    network: fantom
+    source:
+      address: "0xaa155F0Ee6855D0227BBCFa218930196ef09910B"
+      abi: Launchpad
+      startBlock: 98928674
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Bought
+        - OwnershipTransferred
+        - Sold
+        - Swap
+        - TokenCreated
+        - TokenLaunched
+      abis:
+        - name: Launchpad
+          file: ./abis/Launchpad.json
+      eventHandlers:
+        - event: Bought(address,address,uint256,uint256,uint256)
+          handler: handleBought
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+        - event: Sold(address,address,uint256,uint256,uint256)
+          handler: handleSold
+        - event: Swap(indexed address,uint256,uint256,uint256,uint256,indexed address)
+          handler: handleSwap
+        - event: TokenCreated(address,address,uint256,string,string,string,string,string[],uint256,uint8)
+          handler: handleTokenCreated
+        - event: TokenLaunched(address,address,address)
+          handler: handleTokenLaunched
+      file: ./src/launchpad.ts
