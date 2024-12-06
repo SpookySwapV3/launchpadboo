@@ -1,19 +1,39 @@
+type Pool @entity {
+  id: Bytes!     # same as token address in hex form
+  token: Bytes!  # address of the token
+  price: BigInt! # latest known price
+
+  # One-to-many relationships to events
+  buys: [Bought!]! @derivedFrom(field: "pool")
+  sells: [Sold!]! @derivedFrom(field: "pool")
+  swaps: [Swap!]! @derivedFrom(field: "pool")
+}
+
+type TransactionContext @entity(immutable: true) {
+  id: Bytes!   # transaction hash
+  token: Bytes! 
+  pool: Bytes!
+}
+
 type Bought @entity(immutable: true) {
   id: Bytes!
-  buyer: Bytes! # address
-  token: Bytes! # address
-  ethIn: BigInt! # uint256
-  tokensOut: BigInt! # uint256
-  newPrice: BigInt! # uint256
+  buyer: Bytes!
+  token: Bytes!
+  ethIn: BigInt!
+  tokensOut: BigInt!
+  newPrice: BigInt!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
+
+  # Link to the Pool this token belongs to
+  pool: Pool!
 }
 
 type OwnershipTransferred @entity(immutable: true) {
   id: Bytes!
-  previousOwner: Bytes! # address
-  newOwner: Bytes! # address
+  previousOwner: Bytes!
+  newOwner: Bytes!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
@@ -21,41 +41,47 @@ type OwnershipTransferred @entity(immutable: true) {
 
 type Sold @entity(immutable: true) {
   id: Bytes!
-  seller: Bytes! # address
-  token: Bytes! # address
-  ethOut: BigInt! # uint256
-  tokensIn: BigInt! # uint256
-  newPrice: BigInt! # uint256
+  seller: Bytes!
+  token: Bytes!
+  ethOut: BigInt!
+  tokensIn: BigInt!
+  newPrice: BigInt!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
+
+  # Link to the Pool this token belongs to
+  pool: Pool!
 }
 
 type Swap @entity(immutable: true) {
   id: Bytes!
-  sender: Bytes! # address
-  amount0In: BigInt! # uint256
-  amount1In: BigInt! # uint256
-  amount0Out: BigInt! # uint256
-  amount1Out: BigInt! # uint256
-  to: Bytes! # address
+  sender: Bytes!
+  amount0In: BigInt!
+  amount1In: BigInt!
+  amount0Out: BigInt!
+  amount1Out: BigInt!
+  to: Bytes!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
+
+  # Link to the Pool for filtering swaps by token
+  pool: Pool!
 }
 
 type TokenCreated @entity(immutable: true) {
   id: Bytes!
-  creator: Bytes! # address
-  token: Bytes! # address
-  supply: BigInt! # uint256
-  name: String! # string
-  symbol: String! # string
-  imageCid: String! # string
-  description: String! # string
-  links: [String!]! # string[]
-  price: BigInt! # uint256
-  lpStrategy: Int! # uint8
+  creator: Bytes!
+  token: Bytes!
+  supply: BigInt!
+  name: String!
+  symbol: String!
+  imageCid: String!
+  description: String!
+  links: [String!]!
+  price: BigInt!
+  lpStrategy: Int!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
@@ -63,9 +89,9 @@ type TokenCreated @entity(immutable: true) {
 
 type TokenLaunched @entity(immutable: true) {
   id: Bytes!
-  creator: Bytes! # address
-  token: Bytes! # address
-  pair: Bytes! # address
+  creator: Bytes!
+  token: Bytes!
+  pair: Bytes!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
