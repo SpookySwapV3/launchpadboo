@@ -2,6 +2,29 @@
   { "type": "constructor", "inputs": [], "stateMutability": "nonpayable" },
   {
     "type": "function",
+    "name": "_launchstats_FakePool",
+    "inputs": [
+      { "name": "token", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [
+      { "name": "", "type": "uint256", "internalType": "uint256" },
+      { "name": "", "type": "uint256", "internalType": "uint256" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "_quote_FakePool",
+    "inputs": [
+      { "name": "token", "type": "address", "internalType": "address" },
+      { "name": "amount", "type": "uint256", "internalType": "uint256" },
+      { "name": "ethOut", "type": "bool", "internalType": "bool" }
+    ],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "buy",
     "inputs": [
       { "name": "token", "type": "address", "internalType": "address" },
@@ -12,6 +35,13 @@
       { "name": "newPrice", "type": "uint256", "internalType": "uint256" }
     ],
     "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "calculateTxFee",
+    "inputs": [{ "name": "eth", "type": "uint256", "internalType": "uint256" }],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -35,10 +65,55 @@
   },
   {
     "type": "function",
-    "name": "fakepools",
+    "name": "getConfig",
     "inputs": [],
     "outputs": [
-      { "name": "", "type": "address", "internalType": "contract FakePools" }
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct Config",
+        "components": [
+          { "name": "proceeds", "type": "uint256", "internalType": "uint256" },
+          {
+            "name": "creationPrice",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "blueprintToken",
+            "type": "address",
+            "internalType": "address"
+          },
+          { "name": "txFee", "type": "uint16", "internalType": "uint16" },
+          { "name": "launchFee", "type": "uint16", "internalType": "uint16" },
+          {
+            "name": "fakePoolEthMCapThreshold",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "tokenSupply",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "nfpManager",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "fakePoolBaseEther",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "foundation",
+            "type": "address",
+            "internalType": "address"
+          },
+          { "name": "weth", "type": "address", "internalType": "address" }
+        ]
+      }
     ],
     "stateMutability": "view"
   },
@@ -48,7 +123,12 @@
     "inputs": [
       { "name": "token", "type": "address", "internalType": "address" }
     ],
-    "outputs": [],
+    "outputs": [
+      { "name": "tokenId", "type": "uint256", "internalType": "uint256" },
+      { "name": "liquidity", "type": "uint128", "internalType": "uint128" },
+      { "name": "amount0", "type": "uint256", "internalType": "uint256" },
+      { "name": "amount1", "type": "uint256", "internalType": "uint256" }
+    ],
     "stateMutability": "payable"
   },
   {
@@ -92,6 +172,60 @@
   },
   {
     "type": "function",
+    "name": "setConfig",
+    "inputs": [
+      {
+        "name": "_config",
+        "type": "tuple",
+        "internalType": "struct Config",
+        "components": [
+          { "name": "proceeds", "type": "uint256", "internalType": "uint256" },
+          {
+            "name": "creationPrice",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "blueprintToken",
+            "type": "address",
+            "internalType": "address"
+          },
+          { "name": "txFee", "type": "uint16", "internalType": "uint16" },
+          { "name": "launchFee", "type": "uint16", "internalType": "uint16" },
+          {
+            "name": "fakePoolEthMCapThreshold",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "tokenSupply",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "nfpManager",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "fakePoolBaseEther",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "foundation",
+            "type": "address",
+            "internalType": "address"
+          },
+          { "name": "weth", "type": "address", "internalType": "address" }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "transferOwnership",
     "inputs": [
       { "name": "newOwner", "type": "address", "internalType": "address" }
@@ -129,6 +263,75 @@
       },
       {
         "name": "newPrice",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "FakePoolCreated",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "sellPenalty",
+        "type": "uint16",
+        "indexed": false,
+        "internalType": "uint16"
+      },
+      {
+        "name": "ethReserve",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "tokenReserve",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "FakePoolMCapReached",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "FakePoolReserveChanged",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "ethReserve",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "tokenReserve",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"

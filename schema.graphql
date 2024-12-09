@@ -7,6 +7,9 @@ type Pool @entity {
   buys: [Bought!]! @derivedFrom(field: "pool")
   sells: [Sold!]! @derivedFrom(field: "pool")
   swaps: [Swap!]! @derivedFrom(field: "pool")
+
+   # New Relationship
+  tokenCreated: TokenCreated @entityField
 }
 
 type TransactionContext @entity(immutable: true) {
@@ -14,6 +17,39 @@ type TransactionContext @entity(immutable: true) {
   token: Bytes! 
   pool: Bytes!
 }
+
+type FakePoolCreated @entity(immutable: true) {
+  id: Bytes!
+  token: Bytes! # address
+  sellPenalty: Int! # uint16
+  ethReserve: BigInt! # uint256
+  tokenReserve: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type FakePoolMCapReached @entity(immutable: true) {
+  id: Bytes!
+  token: Bytes! # address
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+
+    # New Relationship
+  tokenCreated: TokenCreated! @relation(fields: ["token"], references: ["id"])
+}
+
+type FakePoolReserveChanged @entity(immutable: true) {
+  id: Bytes!
+  token: Bytes! # address
+  ethReserve: BigInt! # uint256
+  tokenReserve: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
 
 type Bought @entity(immutable: true) {
   id: Bytes!
@@ -85,6 +121,11 @@ type TokenCreated @entity(immutable: true) {
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
+
+    # New Relationships
+  fakePoolMCapReacheds: [FakePoolMCapReached!]! @derivedFrom(field: "tokenCreated")
+  tokenLauncheds: [TokenLaunched!]! @derivedFrom(field: "tokenCreated")
+  pool: Pool! @derivedFrom(field: "tokenCreated")
 }
 
 type TokenLaunched @entity(immutable: true) {
@@ -95,4 +136,28 @@ type TokenLaunched @entity(immutable: true) {
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
+
+   # New Relationship
+  tokenCreated: TokenCreated! @entityField
+
+}
+
+type PoolDayData @entity {
+  id: Bytes!
+  date: Int!       # Start of day timestamp in Unix (e.g. floor(timestamp / 86400) * 86400)
+  pool: Pool!
+  dailyVolume: BigInt!  # Accumulated volume over this day
+  dailyVolumeToken: BigInt! 
+  dailyVolumeETH: BigInt!   
+  
+}
+
+type PoolHourData @entity {
+  id: Bytes!
+  hourStartUnix: Int! # Start of hour timestamp in Unix (e.g. floor(timestamp / 3600) * 3600)
+  pool: Pool!
+  hourlyVolume: BigInt!  # Accumulated volume over this hour
+  hourlyVolumeToken: BigInt!
+  hourlyVolumeETH: BigInt!
+
 }

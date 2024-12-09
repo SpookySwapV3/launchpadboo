@@ -1,5 +1,8 @@
 import {
   Bought as BoughtEvent,
+  FakePoolCreated as FakePoolCreatedEvent,
+  FakePoolMCapReached as FakePoolMCapReachedEvent,
+  FakePoolReserveChanged as FakePoolReserveChangedEvent,
   OwnershipTransferred as OwnershipTransferredEvent,
   Sold as SoldEvent,
   Swap as SwapEvent,
@@ -14,9 +17,70 @@ import {
   TokenCreated,
   TokenLaunched,
   Pool,
-  TransactionContext
+  TransactionContext,
+  FakePoolCreated,
+  FakePoolMCapReached,
+  FakePoolReserveChanged,
+  PoolDayData,
+  PoolHourData,
 } from "../generated/schema"
 import { Address, BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts"
+
+export function handleFakePoolCreated(event: FakePoolCreatedEvent): void {
+  let entity = new FakePoolCreated(
+    event.transaction.hash.concatI32(event.logIndex.toI32())
+  )
+  entity.token = event.params.token
+  entity.sellPenalty = event.params.sellPenalty
+  entity.ethReserve = event.params.ethReserve
+  entity.tokenReserve = event.params.tokenReserve
+
+  entity.blockNumber = event.block.number
+  entity.blockTimestamp = event.block.timestamp
+  entity.transactionHash = event.transaction.hash
+
+  entity.save()
+}
+
+export function handleFakePoolMCapReached(
+  event: FakePoolMCapReachedEvent
+): void {
+  let entity = new FakePoolMCapReached(
+    event.transaction.hash.concatI32(event.logIndex.toI32())
+  )
+  entity.token = event.params.token
+
+  entity.blockNumber = event.block.number
+  entity.blockTimestamp = event.block.timestamp
+  entity.transactionHash = event.transaction.hash
+
+
+  // Link to TokenCreated
+  let tokenCreated = TokenCreated.load(event.params.token)
+  if (tokenCreated) {
+    entity.tokenCreated = tokenCreated.id
+  }
+  entity.save()
+
+}
+
+export function handleFakePoolReserveChanged(
+  event: FakePoolReserveChangedEvent
+): void {
+  let entity = new FakePoolReserveChanged(
+    event.transaction.hash.concatI32(event.logIndex.toI32())
+  )
+  entity.token = event.params.token
+  entity.ethReserve = event.params.ethReserve
+  entity.tokenReserve = event.params.tokenReserve
+
+  entity.blockNumber = event.block.number
+  entity.blockTimestamp = event.block.timestamp
+  entity.transactionHash = event.transaction.hash
+
+  entity.save()
+}
+
 
 function getOrCreatePool(tokenAddress: Address): Pool {
   let id = tokenAddress
@@ -25,6 +89,15 @@ function getOrCreatePool(tokenAddress: Address): Pool {
     pool = new Pool(id)
     pool.token = tokenAddress
     pool.price = BigInt.fromI32(0)
+
+    let tokenCreated = TokenCreated.load(tokenAddress)
+    if (tokenCreated) {
+      pool.tokenCreated = tokenCreated.id
+    } else {
+      pool.tokenCreated = null
+    }
+
+    pool.save()
   }
   return pool as Pool
 }
@@ -67,6 +140,13 @@ export function handleBought(event: BoughtEvent): void {
 
   // Store transaction context for subsequent Swap event
   createTransactionContext(event.transaction.hash, event.params.token, pool.id)
+  let volumeChange = event.params.ethIn
+  let tokenVolumeChange = event.params.tokensOut
+  let ethVolumeChange = event.params.ethIn
+
+  updatePoolDayData(pool, event.block.timestamp, volumeChange, ethVolumeChange, tokenVolumeChange)
+  updatePoolHourData(pool, event.block.timestamp, volumeChange, ethVolumeChange, tokenVolumeChange)
+
 }
 
 export function handleSold(event: SoldEvent): void {
@@ -91,6 +171,14 @@ export function handleSold(event: SoldEvent): void {
 
   // Store transaction context for subsequent Swap event
   createTransactionContext(event.transaction.hash, event.params.token, pool.id)
+
+  let volumeChange = event.params.ethOut
+  let tokenVolumeChange = event.params.tokensIn
+  let ethVolumeChange = event.params.ethOut
+
+  updatePoolDayData(pool, event.block.timestamp, volumeChange, ethVolumeChange, tokenVolumeChange)
+  updatePoolHourData(pool, event.block.timestamp, volumeChange, ethVolumeChange, tokenVolumeChange)
+
 }
 
 export function handleSwap(event: SwapEvent): void {
@@ -121,6 +209,7 @@ export function handleSwap(event: SwapEvent): void {
 }
 
 export function handleTokenCreated(event: TokenCreatedEvent): void {
+
   let entity = new TokenCreated(
     event.transaction.hash.concatI32(event.logIndex.toI32())
   )
@@ -143,6 +232,8 @@ export function handleTokenCreated(event: TokenCreatedEvent): void {
   // Initialize a pool for this token
   let pool = getOrCreatePool(event.params.token)
   pool.price = event.params.price
+
+  pool.tokenCreated = entity.id // Link Pool to TokenCreated
   pool.save()
 }
 
@@ -157,11 +248,17 @@ export function handleTokenLaunched(event: TokenLaunchedEvent): void {
   entity.blockNumber = event.block.number
   entity.blockTimestamp = event.block.timestamp
   entity.transactionHash = event.transaction.hash
+  // Link to TokenCreated
+  let tokenCreated = TokenCreated.load(event.params.token)
+  if (tokenCreated) {
+    entity.tokenCreated = tokenCreated.id
+  }
+
   entity.save()
 
-  // If needed, we can also update the pool here.
   let pool = getOrCreatePool(event.params.token)
   pool.save()
+
 }
 
 export function handleOwnershipTransferred(event: OwnershipTransferredEvent): void {
@@ -175,4 +272,52 @@ export function handleOwnershipTransferred(event: OwnershipTransferredEvent): vo
   entity.blockTimestamp = event.block.timestamp
   entity.transactionHash = event.transaction.hash
   entity.save()
+}
+
+function getDayStartTimestamp(timestamp: BigInt): i32 {
+  return (timestamp.toI32() / 86400) * 86400
+}
+
+function getHourStartTimestamp(timestamp: BigInt): i32 {
+  return (timestamp.toI32() / 3600) * 3600
+}
+
+function updatePoolDayData(pool: Pool, timestamp: BigInt, volumeChange: BigInt, volumeETHChange: BigInt, volumeTokenChange: BigInt): void {
+  let dayStartTimestamp = getDayStartTimestamp(timestamp)
+  let dayID = pool.id.concat(Bytes.fromUTF8("-")).concat(Bytes.fromI32(dayStartTimestamp))
+
+  let poolDayData = PoolDayData.load(dayID)
+  if (poolDayData == null) {
+    poolDayData = new PoolDayData(dayID)
+    poolDayData.date = dayStartTimestamp
+    poolDayData.pool = pool.id
+    poolDayData.dailyVolume = BigInt.zero()
+    poolDayData.dailyVolumeETH = BigInt.zero()
+    poolDayData.dailyVolumeToken = BigInt.zero()
+  }
+
+  poolDayData.dailyVolume = poolDayData.dailyVolume.plus(volumeChange)
+  poolDayData.dailyVolumeETH = poolDayData.dailyVolumeETH.plus(volumeETHChange)
+  poolDayData.dailyVolumeToken = poolDayData.dailyVolumeToken.plus(volumeTokenChange)
+  poolDayData.save()
+}
+
+function updatePoolHourData(pool: Pool, timestamp: BigInt, volumeChange: BigInt, volumeETHChange: BigInt, volumeTokenChange: BigInt): void {
+  let hourStartTimestamp = getHourStartTimestamp(timestamp)
+  let hourID = pool.id.concat(Bytes.fromUTF8("-")).concat(Bytes.fromI32(hourStartTimestamp))
+
+  let poolHourData = PoolHourData.load(hourID)
+  if (poolHourData == null) {
+    poolHourData = new PoolHourData(hourID)
+    poolHourData.hourStartUnix = hourStartTimestamp
+    poolHourData.pool = pool.id
+    poolHourData.hourlyVolume = BigInt.zero()
+    poolHourData.hourlyVolumeETH = BigInt.zero()
+    poolHourData.hourlyVolumeToken = BigInt.zero()
+  }
+
+  poolHourData.hourlyVolume = poolHourData.hourlyVolume.plus(volumeChange)
+  poolHourData.hourlyVolumeETH = poolHourData.hourlyVolumeETH.plus(volumeETHChange)
+  poolHourData.hourlyVolumeToken = poolHourData.hourlyVolumeToken.plus(volumeTokenChange)
+  poolHourData.save()
 }
