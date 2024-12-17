@@ -45,7 +45,7 @@ export function handleFakePoolMCapReached(
   event: FakePoolMCapReachedEvent
 ): void {
   let entity = new FakePoolMCapReached(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
+    event.params.token
   )
   entity.token = event.params.token
 
@@ -236,7 +236,7 @@ export function handleTokenCreated(event: TokenCreatedEvent): void {
 
 export function handleTokenLaunched(event: TokenLaunchedEvent): void {
   let entity = new TokenLaunched(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
+    event.params.token
   )
   entity.creator = event.params.creator
   entity.token = event.params.token
