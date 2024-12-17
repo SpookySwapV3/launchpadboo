@@ -211,7 +211,7 @@ export function handleSwap(event: SwapEvent): void {
 export function handleTokenCreated(event: TokenCreatedEvent): void {
 
   let entity = new TokenCreated(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
+    event.params.token
   )
   entity.creator = event.params.creator
   entity.token = event.params.token
