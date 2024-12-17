@@ -8,9 +8,9 @@ dataSources:
     name: Launchpad
     network: fantom
     source:
-      address: "0xaa155F0Ee6855D0227BBCFa218930196ef09910B"
+      address: "0x9d616b121CFFA480102161CB16D83B2bcA5beD09"
       abi: Launchpad
-      startBlock: 98928674
+      startBlock: 100256742
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
