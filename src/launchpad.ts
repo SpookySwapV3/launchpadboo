@@ -22,7 +22,6 @@ import {
   FakePoolMCapReached,
   FakePoolReserveChanged,
   PoolDayData,
-  PoolHourData,
 } from "../generated/schema"
 import { Address, BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts"
 
@@ -145,7 +144,6 @@ export function handleBought(event: BoughtEvent): void {
   let ethVolumeChange = event.params.ethIn
 
   updatePoolDayData(pool, event.block.timestamp, volumeChange, ethVolumeChange, tokenVolumeChange)
-  updatePoolHourData(pool, event.block.timestamp, volumeChange, ethVolumeChange, tokenVolumeChange)
 
 }
 
@@ -177,7 +175,6 @@ export function handleSold(event: SoldEvent): void {
   let ethVolumeChange = event.params.ethOut
 
   updatePoolDayData(pool, event.block.timestamp, volumeChange, ethVolumeChange, tokenVolumeChange)
-  updatePoolHourData(pool, event.block.timestamp, volumeChange, ethVolumeChange, tokenVolumeChange)
 
 }
 
@@ -300,24 +297,4 @@ function updatePoolDayData(pool: Pool, timestamp: BigInt, volumeChange: BigInt, 
   poolDayData.dailyVolumeETH = poolDayData.dailyVolumeETH.plus(volumeETHChange)
   poolDayData.dailyVolumeToken = poolDayData.dailyVolumeToken.plus(volumeTokenChange)
   poolDayData.save()
-}
-
-function updatePoolHourData(pool: Pool, timestamp: BigInt, volumeChange: BigInt, volumeETHChange: BigInt, volumeTokenChange: BigInt): void {
-  let hourStartTimestamp = getHourStartTimestamp(timestamp)
-  let hourID = pool.id.concat(Bytes.fromUTF8("-")).concat(Bytes.fromI32(hourStartTimestamp))
-
-  let poolHourData = PoolHourData.load(hourID)
-  if (poolHourData == null) {
-    poolHourData = new PoolHourData(hourID)
-    poolHourData.hourStartUnix = hourStartTimestamp
-    poolHourData.pool = pool.id
-    poolHourData.hourlyVolume = BigInt.zero()
-    poolHourData.hourlyVolumeETH = BigInt.zero()
-    poolHourData.hourlyVolumeToken = BigInt.zero()
-  }
-
-  poolHourData.hourlyVolume = poolHourData.hourlyVolume.plus(volumeChange)
-  poolHourData.hourlyVolumeETH = poolHourData.hourlyVolumeETH.plus(volumeETHChange)
-  poolHourData.hourlyVolumeToken = poolHourData.hourlyVolumeToken.plus(volumeTokenChange)
-  poolHourData.save()
 }

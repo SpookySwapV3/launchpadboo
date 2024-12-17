@@ -152,12 +152,3 @@ type PoolDayData @entity {
   
 }
 
-type PoolHourData @entity {
-  id: Bytes!
-  hourStartUnix: Int! # Start of hour timestamp in Unix (e.g. floor(timestamp / 3600) * 3600)
-  pool: Pool!
-  hourlyVolume: BigInt!  # Accumulated volume over this hour
-  hourlyVolumeToken: BigInt!
-  hourlyVolumeETH: BigInt!
-
-}
