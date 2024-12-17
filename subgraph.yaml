@@ -22,6 +22,7 @@ dataSources:
         - Swap
         - TokenCreated
         - TokenLaunched
+        - FakePoolMCapReached
       abis:
         - name: Launchpad
           file: ./abis/Launchpad.json
@@ -38,4 +39,6 @@ dataSources:
           handler: handleTokenCreated
         - event: TokenLaunched(address,address,address)
           handler: handleTokenLaunched
+        - event: FakePoolMCapReached(address)
+          handler: handleFakePoolMCapReached
       file: ./src/launchpad.ts
