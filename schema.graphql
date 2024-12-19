@@ -152,31 +152,3 @@ type PoolDayData @entity {
   
 }
 
-type FakePoolCreated @entity(immutable: true) {
-  id: Bytes!
-  token: Bytes! # address
-  sellPenalty: Int! # uint16
-  ethReserve: BigInt! # uint256
-  tokenReserve: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type FakePoolMCapReached @entity(immutable: true) {
-  id: Bytes!
-  token: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type FakePoolReserveChanged @entity(immutable: true) {
-  id: Bytes!
-  token: Bytes! # address
-  ethReserve: BigInt! # uint256
-  tokenReserve: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
